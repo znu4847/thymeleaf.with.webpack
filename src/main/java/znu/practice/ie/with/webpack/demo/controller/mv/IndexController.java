@@ -1,4 +1,4 @@
-package znu.practice.ie.with.webpack.demo.controller;
+package znu.practice.ie.with.webpack.demo.controller.mv;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;

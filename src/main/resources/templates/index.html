@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>Page Title</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-  </head>
+  <head th:replace="fragments::head"></head>
   <body>
-    <main>
+    <nav th:replace="fragments::header"></nav>
+    <main role="main" class="container">
       <section>
         <h1>This is index page</h1>
       </section>
     </main>
+    <script src="../static/js/index.js"></script>
   </body>
 </html>

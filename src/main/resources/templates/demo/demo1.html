@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+  <head th:replace="fragments::head"></head>
+  <body>
+    <nav th:replace="fragments::header"></nav>
+    <main role="main" class="container">
+      <section>
+        <p>common attribute sample</p>
+        <ul th:each="attr : ${cmnAttr}">
+          <li><p th:text="${attr}"></p></li>
+        </ul>
+      </section>
+      <section>
+        <h1>This is search page</h1>
+        <article>
+          <p th:text="${messages.size()}"></p>
+          <p>nanana</p>
+          <ul th:each="message : ${messages}">
+            <li><p th:text="${message}"></p></li>
+          </ul>
+        </article>
+      </section>
+    </main>
+    <script src="../static/js/index.js"></script>
+  </body>
+</html>
