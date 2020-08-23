@@ -9,9 +9,9 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>znu.practice.ie.with.webpack</groupId>
-	<artifactId>demo</artifactId>
+	<artifactId>hwinfo.log</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>demo</name>
+	<name>hwinfo.log</name>
 	<description>Demo project for Spring Boot</description>
 
 	<properties>
