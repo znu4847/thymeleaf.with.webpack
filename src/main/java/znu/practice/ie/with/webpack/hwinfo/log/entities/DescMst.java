@@ -16,7 +16,7 @@ public class DescMst {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  private Long descMstId;
 
   @OneToMany(mappedBy = "descMst")
   private List<LogData> logDataList;

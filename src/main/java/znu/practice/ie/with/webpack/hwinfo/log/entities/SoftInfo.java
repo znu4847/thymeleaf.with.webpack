@@ -10,20 +10,14 @@ import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @Entity
 public class SoftInfo {
 
-  public SoftInfo(Long id) {
-    this.id = id;
-  }
-
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  private Long softInfoId;
 
   @OneToMany(mappedBy = "softInfo", cascade = CascadeType.ALL)
   private List<HwinfoLog> hwinfoLog;
@@ -34,7 +28,7 @@ public class SoftInfo {
 
   @Override
   public String toString() {
-    return "SoftInfo [description=" + description + ", id=" + id + ", name=" + name + "]";
+    return "SoftInfo [description=" + description + ", id=" + softInfoId + ", name=" + name + "]";
   }
 
 }

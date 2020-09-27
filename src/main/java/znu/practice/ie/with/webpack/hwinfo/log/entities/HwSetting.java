@@ -10,21 +10,17 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 
+import org.hibernate.annotations.CreationTimestamp;
+
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
 @Data
 @Entity
-@NoArgsConstructor
 public class HwSetting {
-
-  public HwSetting(Long id) {
-    this.id = id;
-  }
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  private Long hwSettingId;
 
   @OneToMany(mappedBy = "hwSetting", cascade = CascadeType.ALL)
   private List<HwinfoLog> hwinfoLog;
@@ -33,5 +29,6 @@ public class HwSetting {
 
   private String description;
 
+  @CreationTimestamp
   private LocalDateTime registedDate;
 }

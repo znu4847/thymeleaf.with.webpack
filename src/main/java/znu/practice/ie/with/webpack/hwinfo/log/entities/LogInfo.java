@@ -11,6 +11,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 
+import com.google.common.collect.Lists;
+
 import lombok.Data;
 
 @Data
@@ -19,7 +21,7 @@ public class LogInfo {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
-  private Long id;
+  private Long logInfoId;
 
   @OneToOne(cascade = CascadeType.ALL)
   @JoinColumn(name = "hwinfo_log_id")
@@ -29,5 +31,13 @@ public class LogInfo {
   private List<LogData> logDataList;
 
   private String fileName;
+
+  public void addLogData(LogData logData) {
+    if (logData == null)
+      return;
+    if (logDataList == null)
+      this.logDataList = Lists.newArrayList();
+    this.logDataList.add(logData);
+  }
 
 }
