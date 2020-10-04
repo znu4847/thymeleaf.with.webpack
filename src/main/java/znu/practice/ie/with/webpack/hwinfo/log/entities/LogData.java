@@ -5,6 +5,7 @@ import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.MapsId;
+import javax.persistence.OneToOne;
 
 import lombok.Data;
 
@@ -15,16 +16,15 @@ public class LogData {
   @EmbeddedId
   private LogDataId id = new LogDataId();
 
-  // private Long logInfoId;
   @ManyToOne
   @MapsId("logInfoId")
   @JoinColumn(name = "log_info_id")
   private LogInfo logInfo;
 
-  @ManyToOne
-  @MapsId("descMstId")
-  @JoinColumn(name = "desc_mst_id")
-  private DescMst descMst;
+  @OneToOne
+  @MapsId("logHeaderId")
+  @JoinColumn(name = "log_header_id")
+  private LogHeader logHeader;
 
   private String value;
 

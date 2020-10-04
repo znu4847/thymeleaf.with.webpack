@@ -6,5 +6,5 @@ import znu.practice.ie.with.webpack.hwinfo.log.entities.HwSetting;
 
 public interface HwSettingRepository extends CrudRepository<HwSetting, Long> {
 
-  HwSetting findByName(String name);
+  // HwSetting findByName(String name);
 }

@@ -13,9 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import znu.practice.ie.with.webpack.hwinfo.log.repositories.DescMstGroupRepository;
 import znu.practice.ie.with.webpack.hwinfo.log.repositories.DescMstRepository;
 import znu.practice.ie.with.webpack.hwinfo.log.repositories.HwinfoLogRepository;
 import znu.practice.ie.with.webpack.hwinfo.log.repositories.LogDataRepository;
+import znu.practice.ie.with.webpack.hwinfo.log.repositories.LogHeaderRepository;
 import znu.practice.ie.with.webpack.hwinfo.log.repositories.LogInfoRepository;
 
 @SpringBootTest
@@ -33,6 +35,21 @@ public class LogDataTest {
   @Autowired
   DescMstRepository descMstRepo;
 
+  @Autowired
+  DescMstGroupRepository descMstGroupRepo;
+
+  @Autowired
+  LogHeaderRepository logHeaderRepo;
+
+  @Autowired
+  DescMstTestData descMstTestData;
+
+  @Autowired
+  LogHeaderTestData logHeaderTestData;
+
+  /**
+   * save with parents
+   */
   @Test
   @Transactional
   public void savePtn1() {
@@ -48,52 +65,112 @@ public class LogDataTest {
     logInfo.setHwinfoLog(hwinfoLog);
 
     // save LogInfo
-    HwinfoLog hwinfoLogSv = hwinfoLogRepo.save(hwinfoLog);
-    assertNotNull(hwinfoLogSv.getLogInfo().getLogInfoId());
+    hwinfoLogRepo.save(hwinfoLog);
+    assertNotNull(hwinfoLog.getLogInfo().getLogInfoId());
 
-    // create and save DescMst
-    DescMst descMst = new DescMst();
-    descMst.setDataType("%");
-    descMst.setName("Core 0 T0 Usage");
-    descMst.setUnit("%");
-    DescMst descMstSv = descMstRepo.save(descMst);
+    // select or create DescMstGroup
+    DescMstGroup descMstGroup = makeDescMstGroup("CPU [#0]: AMD Ryzen 7 3800X");
+    // select or create DescMstGroup
+    DescMst descMst = descMstTestData.makeDescMst("Core 0 T0 Usage", "%", descMstGroup);
+    // select or create LogHeader
+    LogHeader logHeader = logHeaderTestData.makeLogHeader(44, descMst);
 
     // create LogData
     LogData logData = new LogData();
     logData.setValue("19.4");
-    logData.setLogInfo(hwinfoLogSv.getLogInfo());
-    logData.setDescMst(descMstSv);
+    logData.setLogInfo(hwinfoLog.getLogInfo());
+    logData.setLogHeader(logHeader);
 
     LogDataId id = logData.getId();
     id.setRowNo(1);
 
     // save LogData
-    LogData logDataSv = dataRepo.save(logData);
-    Optional<LogData> logDataSel = dataRepo.findById(logDataSv.getId());
+    dataRepo.save(logData);
+    Optional<LogData> logDataSel = dataRepo.findById(logData.getId());
 
     assertTrue(logDataSel.isPresent());
     LogData logDataE = logDataSel.get();
     assertEquals(logData.getValue(), logDataE.getValue());
-    assertEquals(logData.getDescMst().getDescMstId(), logDataE.getId().getDescMstId());
+    assertEquals(logData.getLogHeader().getLogHeaderId(), logDataE.getLogHeader().getLogHeaderId());
     assertEquals(logData.getLogInfo().getLogInfoId(), logDataE.getId().getLogInfoId());
 
   }
 
+  /**
+   * save by parent
+   */
   @Test
   @Transactional
   public void savePtn2() {
+
+    // select or create DescMstGroup
+    DescMstGroup descMstGroup = this.makeDescMstGroup("CPU [#0]: AMD Ryzen 7 3800X");
+
+    // select or create DescMst
+    DescMst descMst = descMstTestData.makeDescMst("Core 0 T0 Effective Clock", "MHz", descMstGroup);
+
+    // select or create LogHeader
+    LogHeader logHeader = logHeaderTestData.makeLogHeader(27, descMst);
+
+    // create HwinfoLog
+    HwinfoLog hwinfoLog = new HwinfoLog();
+    hwinfoLog.setDescription("logData save test");
+    hwinfoLog.setName("0920-doom");
+    // create LogInfo
+    LogInfo logInfo = new LogInfo();
+    logInfo.setFileName("0920-doom.csv");
+    // OneToOne
+    hwinfoLog.setLogInfo(logInfo);
+    // OneToOne
+    logInfo.setHwinfoLog(hwinfoLog);
+
+    // create LogData
+    LogData logData = new LogData();
+    logData.setValue("19.4");
+    // ManyToOne
+    logData.setLogInfo(logInfo);
+    logInfo.addLogData(logData);
+    // OneToOne
+    logData.setLogHeader(logHeader);
+    // set rowNo
+    LogDataId id = logData.getId();
+    id.setRowNo(1);
+
+    // save LogInfo
+    hwinfoLogRepo.save(hwinfoLog);
+    assertNotNull(hwinfoLog.getLogInfo().getLogInfoId());
+    assertNotNull(logData.getId().getLogHeaderId());
+    assertNotNull(logData.getId().getLogInfoId());
+
+    Optional<LogData> logDataSel = dataRepo.findById(logData.getId());
+
+    assertTrue(logDataSel.isPresent());
+    LogData logDataE = logDataSel.get();
+    assertEquals(logData.getValue(), logDataE.getValue());
+    assertEquals(logData.getLogHeader().getLogHeaderId(), logDataE.getLogHeader().getLogHeaderId());
+    assertEquals(logData.getLogInfo().getLogInfoId(), logDataE.getId().getLogInfoId());
+
+  }
+
+  /**
+   * save multiple datas
+   */
+  @Test
+  @Transactional
+  public void savePtn3() {
+    // select or create DescMstGroup
+    DescMstGroup descMstGroup = makeDescMstGroup("CPU [#0]: AMD Ryzen 7 3800X");
+
     // create and save DescMst
     // desc1
-    DescMst descMst1 = new DescMst();
-    descMst1.setName("Core 0 T0 Effective Clock");
-    descMst1.setUnit("MHz");
-    DescMst descMst1Sv = descMstRepo.save(descMst1);
-
+    DescMst descMst1 = descMstTestData.makeDescMst("Core 0 T0 Effective Clock", "MHz", descMstGroup);
     // desc2
-    DescMst descMst2 = new DescMst();
-    descMst2.setName("Core 0 T1 Effective Clock");
-    descMst2.setUnit("MHz");
-    DescMst descMst2Sv = descMstRepo.save(descMst2);
+    DescMst descMst2 = descMstTestData.makeDescMst("Core 0 T1 Effective Clock", "MHz", descMstGroup);
+
+    // header1
+    LogHeader logHeader1 = logHeaderTestData.makeLogHeader(27, descMst1);
+    // header2
+    LogHeader logHeader2 = logHeaderTestData.makeLogHeader(27, descMst2);
 
     // row1, desc1
     LogData logData1_1 = new LogData();
@@ -108,13 +185,18 @@ public class LogDataTest {
     logData1_2.setValue("7.1");
     logData2_1.setValue("3442.9");
     logData2_2.setValue("2205.1");
+    // rowNo
+    logData1_1.getId().setRowNo(1);
+    logData1_2.getId().setRowNo(1);
+    logData2_1.getId().setRowNo(2);
+    logData2_2.getId().setRowNo(2);
 
     // parent1
-    // ManyToOne
-    logData1_1.setDescMst(descMst1Sv);
-    logData1_2.setDescMst(descMst2Sv);
-    logData2_1.setDescMst(descMst1Sv);
-    logData2_2.setDescMst(descMst2Sv);
+    // OneToOne
+    logData1_1.setLogHeader(logHeader1);
+    logData1_2.setLogHeader(logHeader2);
+    logData2_1.setLogHeader(logHeader1);
+    logData2_2.setLogHeader(logHeader2);
 
     // create LogInfo
     LogInfo logInfo = new LogInfo();
@@ -130,11 +212,6 @@ public class LogDataTest {
     logInfo.addLogData(logData1_2);
     logInfo.addLogData(logData2_1);
     logInfo.addLogData(logData2_2);
-    // rowNo
-    logData1_1.getId().setRowNo(1);
-    logData1_2.getId().setRowNo(1);
-    logData2_1.getId().setRowNo(2);
-    logData2_2.getId().setRowNo(2);
 
     LogInfo logInfoSv = this.logInfoRepo.save(logInfo);
     Optional<LogInfo> sel = this.logInfoRepo.findById(logInfoSv.getLogInfoId());
@@ -143,18 +220,29 @@ public class LogDataTest {
     List<LogData> logDataListE = logInfoE.getLogDataList();
     for (LogData d : logDataListE) {
       LogDataId id = d.getId();
-      assertNotNull(id.getDescMstId());
+      assertNotNull(id.getLogHeaderId());
       assertNotNull(id.getLogInfoId());
-      if (id.getRowNo() == 1 && id.getDescMstId() == descMst1Sv.getDescMstId()) {
+      if (id.getRowNo() == 1 && id.getLogHeaderId() == logHeader1.getLogHeaderId()) {
         assertEquals(logData1_1.getValue(), d.getValue());
-      } else if (id.getRowNo() == 1 && id.getDescMstId() == descMst2Sv.getDescMstId()) {
+      } else if (id.getRowNo() == 1 && id.getLogHeaderId() == logHeader2.getLogHeaderId()) {
         assertEquals(logData1_2.getValue(), d.getValue());
-      } else if (id.getRowNo() == 2 && id.getDescMstId() == descMst1Sv.getDescMstId()) {
+      } else if (id.getRowNo() == 2 && id.getLogHeaderId() == logHeader1.getLogHeaderId()) {
         assertEquals(logData2_1.getValue(), d.getValue());
-      } else if (id.getRowNo() == 2 && id.getDescMstId() == descMst2Sv.getDescMstId()) {
+      } else if (id.getRowNo() == 2 && id.getLogHeaderId() == logHeader2.getLogHeaderId()) {
         assertEquals(logData2_2.getValue(), d.getValue());
       }
     }
+  }
+
+  DescMstGroup makeDescMstGroup(String name) {
+    DescMstGroup descMstGroup = new DescMstGroup();
+    descMstGroup.setName(name);
+    Optional<DescMstGroup> descMstGroupExt = descMstGroupRepo.findByName(descMstGroup.getName());
+    if (descMstGroupExt.isPresent())
+      descMstGroup = descMstGroupExt.get();
+    else
+      descMstGroupRepo.save(descMstGroup);
+    return descMstGroup;
   }
 
 }

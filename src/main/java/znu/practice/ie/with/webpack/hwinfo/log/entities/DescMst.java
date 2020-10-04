@@ -1,12 +1,11 @@
 package znu.practice.ie.with.webpack.hwinfo.log.entities;
 
-import java.util.List;
-
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.OneToMany;
+import javax.persistence.JoinColumn;
+import javax.persistence.ManyToOne;
 
 import lombok.Data;
 
@@ -18,8 +17,9 @@ public class DescMst {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long descMstId;
 
-  @OneToMany(mappedBy = "descMst")
-  private List<LogData> logDataList;
+  @ManyToOne
+  @JoinColumn(name = "desc_mst_group_id")
+  private DescMstGroup descMstGroup;
 
   private String name;
 

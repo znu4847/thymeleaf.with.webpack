@@ -5,6 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Optional;
 
+import javax.transaction.Transactional;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,22 +17,47 @@ import znu.practice.ie.with.webpack.hwinfo.log.repositories.DescMstRepository;
 public class DescMstTest {
 
   @Autowired
-  DescMstRepository repo;
+  DescMstRepository descMstRepo;
+
+  @Autowired
+  DescMstTestData descMstTestData;
+
+  @Autowired
+  DescMstGroupTestData descMstGroupTestData;
 
   @Test
+  @Transactional
   public void save() {
-    DescMst dm = new DescMst();
-    dm.setName("External 1 [°C]");
-    dm.setDataType("Temperature");
-    dm.setUnit("°C");
+    DescMstGroup descMstGroup = descMstGroupTestData.makeDescMstGroup("CPU [#0]: AMD Ryzen 7 3800X");
 
-    DescMst entity = repo.save(dm);
+    DescMst descMst = new DescMst();
+    descMst.setName("External 1 [°C]");
+    descMst.setDataType("Temperature");
+    descMst.setUnit("°C");
+    descMst.setDescMstGroup(descMstGroup);
+    descMstRepo.save(descMst);
 
-    Optional<DescMst> sel = repo.findById(entity.getDescMstId());
-
-    assertTrue(sel.isPresent());
-    assertEquals(dm.getName(), sel.get().getName());
-    assertEquals(dm.getDataType(), sel.get().getDataType());
-    assertEquals(dm.getUnit(), sel.get().getUnit());
+    Optional<DescMst> descMstSel = descMstRepo.findById(descMst.getDescMstId());
+    assertTrue(descMstSel.isPresent());
+    DescMst descMstE = descMstSel.get();
+    assertEquals(descMst.getName(), descMstE.getName());
+    assertEquals(descMst.getDataType(), descMstE.getDataType());
+    assertEquals(descMst.getUnit(), descMstE.getUnit());
   }
+
+  @Test
+  @Transactional
+  public void testData() {
+    DescMstGroup descMstGroup = descMstGroupTestData.makeDescMstGroup("CPU [#0]: AMD Ryzen 7 3800X");
+
+    DescMst descMst = descMstTestData.makeDescMst("External 1 [°C]", "Temperature", descMstGroup);
+
+    Optional<DescMst> descMstSel = descMstRepo.findById(descMst.getDescMstId());
+    assertTrue(descMstSel.isPresent());
+    DescMst descMstE = descMstSel.get();
+    assertEquals(descMst.getName(), descMstE.getName());
+    assertEquals(descMst.getDataType(), descMstE.getDataType());
+    assertEquals(descMst.getUnit(), descMstE.getUnit());
+  }
+
 }
