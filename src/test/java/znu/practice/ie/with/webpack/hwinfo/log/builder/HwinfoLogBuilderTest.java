@@ -1,27 +1,26 @@
 package znu.practice.ie.with.webpack.hwinfo.log.builder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import javax.transaction.Transactional;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 
+import znu.practice.ie.with.webpack.hwinfo.log.entities.DataAttribute;
 import znu.practice.ie.with.webpack.hwinfo.log.entities.HwinfoLog;
 import znu.practice.ie.with.webpack.hwinfo.log.entities.LogData;
 
@@ -32,42 +31,50 @@ public class HwinfoLogBuilderTest {
   HwinfoLogBuilder builder;
 
   @Test
-  public void load() throws IOException {
+  public void readFile() throws IOException {
     File file = new File("src/test/resources/mock/data_sample.CSV");
     MockMultipartFile multipartFile = new MockMultipartFile("data_sample.CSV", new FileInputStream(file));
     List<String[]> dataList = builder.readFile(multipartFile);
     String[] headers = dataList.remove(0);
     String[] row1 = dataList.get(0);
     assertEquals(headers.length, row1.length);
-
+    assertNotNull(dataList);
+    assertTrue(dataList.size() > 0);
   }
 
   @Test
-  public void header() throws IOException {
+  public void convertRawLogData() throws IOException {
     File file = new File("src/test/resources/mock/data_sample.CSV");
     MockMultipartFile multipartFile = new MockMultipartFile("data_sample.CSV", new FileInputStream(file));
     List<String[]> dataList = builder.readFile(multipartFile);
-    String[] headers = dataList.remove(0);
-    String[] groups = dataList.remove(dataList.size() - 1);
-    dataList.remove(dataList.size() - 1);
-
+    RawLogData rawLogData = builder.convertRawLogData(dataList);
+    assertNotNull(rawLogData);
+    assertNotNull(rawLogData.getHeader());
+    assertNotNull(rawLogData.getBody());
+    assertEquals(rawLogData.getHeader().size(), rawLogData.getBody().get(0).length);
   }
 
-  public void header2() throws IOException {
+  @Test
+  @Transactional
+  public void buildHeader() throws IOException {
     File file = new File("src/test/resources/mock/data_sample.CSV");
     MockMultipartFile multipartFile = new MockMultipartFile("data_sample.CSV", new FileInputStream(file));
     List<String[]> dataList = builder.readFile(multipartFile);
-    String[] headers = dataList.remove(0);
-    String[] footer = dataList.remove(dataList.size() - 1);
-    for (int idx = 0; idx < footer.length; idx++) {
-      System.out.println(footer[idx]);
+    RawLogData rawLogData = builder.convertRawLogData(dataList);
+    List<DataAttribute> dataAttrList = builder.buildHeader(rawLogData.getHeader());
+    for (int i = 0; i < dataAttrList.size(); i++) {
+      DataAttribute dataAttr = dataAttrList.get(i);
+      RawDataAttribute rawAttr = rawLogData.getHeader().get(i);
+      assertEquals(dataAttr.getColNo(), rawAttr.getColNo());
+      assertEquals(dataAttr.getDescMst().getName(), rawAttr.getAttribute());
+      assertEquals(dataAttr.getDescMst().getDescMstGroup().getName(), rawAttr.getGroup());
     }
 
   }
 
   // @Test
   // @Transactional
-  public void test1() throws IOException {
+  public void buildData() throws IOException {
     File file = new File("src/test/resources/mock/data_sample.CSV");
     MockMultipartFile multipartFile = new MockMultipartFile("data_sample.CSV", new FileInputStream(file));
     HwinfoLog hwinfoLog = builder.build(multipartFile);

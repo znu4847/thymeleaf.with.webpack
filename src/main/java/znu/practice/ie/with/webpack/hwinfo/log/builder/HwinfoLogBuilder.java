@@ -1,111 +1,110 @@
 package znu.practice.ie.with.webpack.hwinfo.log.builder;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import com.google.common.collect.Maps;
+import com.google.common.collect.Lists;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
 import znu.practice.ie.with.webpack.hwinfo.log.csv.CsvDataLoader;
+import znu.practice.ie.with.webpack.hwinfo.log.entities.DataAttribute;
 import znu.practice.ie.with.webpack.hwinfo.log.entities.DescMst;
+import znu.practice.ie.with.webpack.hwinfo.log.entities.DescMstGroup;
 import znu.practice.ie.with.webpack.hwinfo.log.entities.HwinfoLog;
 import znu.practice.ie.with.webpack.hwinfo.log.entities.LogData;
 import znu.practice.ie.with.webpack.hwinfo.log.entities.LogInfo;
-import znu.practice.ie.with.webpack.hwinfo.log.repositories.DescMstRepository;
 
 @Component
 public class HwinfoLogBuilder {
 
   @Autowired
-  CsvDataLoader loader;
+  CsvDataLoader csvDataLoader;
 
   @Autowired
-  DescMstRepository descMstRepo;
+  LogDataBuilder logDataBuilder;
+
+  @Autowired
+  DataAttributeBuilder dataAttributeBuilder;
+
+  @Autowired
+  DescMstGroupBuilder descMstGroupBuilder;
+
+  @Autowired
+  DescMstBuilder descMstBuilder;
 
   public HwinfoLog build(MultipartFile multipartFile) {
-    List<String[]> dataList = loader.loadManyToManyRelationship(multipartFile);
 
-    // OneToOne
     HwinfoLog hwinfoLog = new HwinfoLog();
     LogInfo logInfo = new LogInfo();
+    // OneToOne
     hwinfoLog.setLogInfo(logInfo);
+    // OneToOne
     logInfo.setHwinfoLog(hwinfoLog);
 
-    // LogData
-    Map<Integer, DescMst> idxDescMstMap = Maps.newHashMap();
-    String[] headers = dataList.remove(0);
-    int idx = 0;
-    // DescMst check
-    for (String header : headers) {
-      Optional<DescMst> descMstSel = null;
-      // Optional<DescMst> descMstSel = descMstRepo.findByName(header);
-      DescMst descMstE = null;
-      if (!descMstSel.isPresent()) {
-        DescMst descMst = new DescMst();
-        String[] typeUnit = this.getTypeUnitArr(header);
-        descMst.setName(header);
-        descMst.setDataType(typeUnit[0]);
-        descMst.setUnit(typeUnit[1]);
-        DescMst descMstSV = descMstRepo.save(descMst);
-        // descMst.setUnit();
-        descMstE = descMstSV;
-      } else {
-        descMstE = descMstSel.get();
-      }
-      idxDescMstMap.put(idx, descMstE);
-      idx++;
-    }
-
-    // create LogData
-    int rowNo = 0;
-    for (String[] row : dataList) {
-      ++rowNo;
-      for (int jdx = 0; jdx < row.length; jdx++) {
-        DescMst descMst = idxDescMstMap.get(jdx);
-        LogData logData = new LogData();
-        logData.setValue(row[jdx]);
-        logData.getId().setRowNo(rowNo);
-        // ManyToOne
-        // logData.setDescMst(descMst);
-        // ManyToOne
-        logData.setLogInfo(logInfo);
-        // OneToMany
-        logInfo.addLogData(logData);
-      }
-    }
+    List<String[]> dataList = this.readFile(multipartFile);
+    RawLogData rawLogData = this.convertRawLogData(dataList);
+    List<DataAttribute> header = this.buildHeader(rawLogData.getHeader());
+    this.buildLogData(rawLogData, logInfo, header);
 
     return hwinfoLog;
   }
 
   List<String[]> readFile(MultipartFile multipartFile) {
-    List<String[]> dataList = loader.loadManyToManyRelationship(multipartFile);
+    List<String[]> dataList = csvDataLoader.loadManyToManyRelationship(multipartFile);
     return dataList;
   }
 
-  String[] getTypeUnitArr(String header) {
-    if (StringUtils.isEmpty(header)) {
-      String[] typeUnit = { "", "" };
-      return typeUnit;
+  RawLogData convertRawLogData(List<String[]> dataList) {
+    String[] header = dataList.remove(0);
+    String[] groups = dataList.remove(dataList.size() - 1);
+    dataList.remove(dataList.size() - 1);
+
+    RawLogData rawLogData = new RawLogData();
+    rawLogData.setBody(dataList);
+
+    List<RawDataAttribute> attrList = Lists.newArrayList();
+    for (int i = 0; i < header.length; i++) {
+      String group = groups[i];
+      if (i == 0) {
+        group = "DATE";
+      } else if (i == 1) {
+        group = "TIME";
+      }
+      RawDataAttribute rawDataAttribute = new RawDataAttribute();
+      rawDataAttribute.setGroup(group);
+      rawDataAttribute.setAttribute(header[i]);
+      rawDataAttribute.setColNo(i);
+      attrList.add(rawDataAttribute);
     }
-    Matcher m = Pattern.compile("\\[(.*?)\\]").matcher(header);
-    String type = "";
-    String unit = "";
-    if (m.find()) {
-      type = header.substring(0, header.indexOf("[") - 1);
-      unit = m.group(1);
-    } else {
-      type = header;
-      unit = header;
+
+    rawLogData.setHeader(attrList);
+    return rawLogData;
+  }
+
+  List<DataAttribute> buildHeader(List<RawDataAttribute> rawHeader) {
+    List<DataAttribute> header = Lists.newArrayList();
+    for (RawDataAttribute attr : rawHeader) {
+      DescMstGroup descMstGroup = this.descMstGroupBuilder.build(attr);
+      DescMst descMst = this.descMstBuilder.build(descMstGroup, attr);
+      DataAttribute dataAttribute = dataAttributeBuilder.build(descMst, attr);
+      header.add(dataAttribute);
     }
-    String[] typeUnit = { type, unit };
-    return typeUnit;
+    return header;
+  }
+
+  List<LogData> buildLogData(RawLogData rawLogData, LogInfo logInfo, List<DataAttribute> header) {
+    List<String[]> dataList = rawLogData.getBody();
+    List<LogData> logDataList = Lists.newArrayList();
+    for (int rowIdx = 0; rowIdx < dataList.size(); rowIdx++) {
+      String[] dataRow = dataList.get(rowIdx);
+      for (DataAttribute dataAttribute : header) {
+        LogData logData = this.logDataBuilder.build(logInfo, dataAttribute, rowIdx, dataRow);
+        logDataList.add(logData);
+      }
+    }
+    return logDataList;
   }
 
 }
