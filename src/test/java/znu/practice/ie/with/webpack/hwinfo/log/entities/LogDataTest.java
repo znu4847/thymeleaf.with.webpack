@@ -17,7 +17,7 @@ import znu.practice.ie.with.webpack.hwinfo.log.repositories.DescMstGroupReposito
 import znu.practice.ie.with.webpack.hwinfo.log.repositories.DescMstRepository;
 import znu.practice.ie.with.webpack.hwinfo.log.repositories.HwinfoLogRepository;
 import znu.practice.ie.with.webpack.hwinfo.log.repositories.LogDataRepository;
-import znu.practice.ie.with.webpack.hwinfo.log.repositories.LogHeaderRepository;
+import znu.practice.ie.with.webpack.hwinfo.log.repositories.DataAttributeRepository;
 import znu.practice.ie.with.webpack.hwinfo.log.repositories.LogInfoRepository;
 
 @SpringBootTest
@@ -39,13 +39,13 @@ public class LogDataTest {
   DescMstGroupRepository descMstGroupRepo;
 
   @Autowired
-  LogHeaderRepository logHeaderRepo;
+  DataAttributeRepository dataAttributeRepo;
 
   @Autowired
   DescMstTestData descMstTestData;
 
   @Autowired
-  LogHeaderTestData logHeaderTestData;
+  DataAttributeTestData dataAttributeTestData;
 
   /**
    * save with parents
@@ -72,14 +72,14 @@ public class LogDataTest {
     DescMstGroup descMstGroup = makeDescMstGroup("CPU [#0]: AMD Ryzen 7 3800X");
     // select or create DescMstGroup
     DescMst descMst = descMstTestData.makeDescMst("Core 0 T0 Usage", "%", descMstGroup);
-    // select or create LogHeader
-    LogHeader logHeader = logHeaderTestData.makeLogHeader(44, descMst);
+    // select or create DataAttribute
+    DataAttribute dataAttribute = dataAttributeTestData.makeDataAttribute(44, descMst);
 
     // create LogData
     LogData logData = new LogData();
     logData.setValue("19.4");
     logData.setLogInfo(hwinfoLog.getLogInfo());
-    logData.setLogHeader(logHeader);
+    logData.setDataAttribute(dataAttribute);
 
     LogDataId id = logData.getId();
     id.setRowNo(1);
@@ -91,7 +91,7 @@ public class LogDataTest {
     assertTrue(logDataSel.isPresent());
     LogData logDataE = logDataSel.get();
     assertEquals(logData.getValue(), logDataE.getValue());
-    assertEquals(logData.getLogHeader().getLogHeaderId(), logDataE.getLogHeader().getLogHeaderId());
+    assertEquals(logData.getDataAttribute().getDataAttributeId(), logDataE.getDataAttribute().getDataAttributeId());
     assertEquals(logData.getLogInfo().getLogInfoId(), logDataE.getId().getLogInfoId());
 
   }
@@ -109,8 +109,8 @@ public class LogDataTest {
     // select or create DescMst
     DescMst descMst = descMstTestData.makeDescMst("Core 0 T0 Effective Clock", "MHz", descMstGroup);
 
-    // select or create LogHeader
-    LogHeader logHeader = logHeaderTestData.makeLogHeader(27, descMst);
+    // select or create DataAttribute
+    DataAttribute dataAttribute = dataAttributeTestData.makeDataAttribute(27, descMst);
 
     // create HwinfoLog
     HwinfoLog hwinfoLog = new HwinfoLog();
@@ -131,7 +131,7 @@ public class LogDataTest {
     logData.setLogInfo(logInfo);
     logInfo.addLogData(logData);
     // OneToOne
-    logData.setLogHeader(logHeader);
+    logData.setDataAttribute(dataAttribute);
     // set rowNo
     LogDataId id = logData.getId();
     id.setRowNo(1);
@@ -139,7 +139,7 @@ public class LogDataTest {
     // save LogInfo
     hwinfoLogRepo.save(hwinfoLog);
     assertNotNull(hwinfoLog.getLogInfo().getLogInfoId());
-    assertNotNull(logData.getId().getLogHeaderId());
+    assertNotNull(logData.getId().getDataAttributeId());
     assertNotNull(logData.getId().getLogInfoId());
 
     Optional<LogData> logDataSel = dataRepo.findById(logData.getId());
@@ -147,7 +147,7 @@ public class LogDataTest {
     assertTrue(logDataSel.isPresent());
     LogData logDataE = logDataSel.get();
     assertEquals(logData.getValue(), logDataE.getValue());
-    assertEquals(logData.getLogHeader().getLogHeaderId(), logDataE.getLogHeader().getLogHeaderId());
+    assertEquals(logData.getDataAttribute().getDataAttributeId(), logDataE.getDataAttribute().getDataAttributeId());
     assertEquals(logData.getLogInfo().getLogInfoId(), logDataE.getId().getLogInfoId());
 
   }
@@ -167,10 +167,10 @@ public class LogDataTest {
     // desc2
     DescMst descMst2 = descMstTestData.makeDescMst("Core 0 T1 Effective Clock", "MHz", descMstGroup);
 
-    // header1
-    LogHeader logHeader1 = logHeaderTestData.makeLogHeader(27, descMst1);
-    // header2
-    LogHeader logHeader2 = logHeaderTestData.makeLogHeader(27, descMst2);
+    // attribute1
+    DataAttribute dataAttribute1 = dataAttributeTestData.makeDataAttribute(27, descMst1);
+    // attribute2
+    DataAttribute dataAttribute2 = dataAttributeTestData.makeDataAttribute(27, descMst2);
 
     // row1, desc1
     LogData logData1_1 = new LogData();
@@ -193,10 +193,10 @@ public class LogDataTest {
 
     // parent1
     // OneToOne
-    logData1_1.setLogHeader(logHeader1);
-    logData1_2.setLogHeader(logHeader2);
-    logData2_1.setLogHeader(logHeader1);
-    logData2_2.setLogHeader(logHeader2);
+    logData1_1.setDataAttribute(dataAttribute1);
+    logData1_2.setDataAttribute(dataAttribute2);
+    logData2_1.setDataAttribute(dataAttribute1);
+    logData2_2.setDataAttribute(dataAttribute2);
 
     // create LogInfo
     LogInfo logInfo = new LogInfo();
@@ -220,15 +220,15 @@ public class LogDataTest {
     List<LogData> logDataListE = logInfoE.getLogDataList();
     for (LogData d : logDataListE) {
       LogDataId id = d.getId();
-      assertNotNull(id.getLogHeaderId());
+      assertNotNull(id.getDataAttributeId());
       assertNotNull(id.getLogInfoId());
-      if (id.getRowNo() == 1 && id.getLogHeaderId() == logHeader1.getLogHeaderId()) {
+      if (id.getRowNo() == 1 && id.getDataAttributeId() == dataAttribute1.getDataAttributeId()) {
         assertEquals(logData1_1.getValue(), d.getValue());
-      } else if (id.getRowNo() == 1 && id.getLogHeaderId() == logHeader2.getLogHeaderId()) {
+      } else if (id.getRowNo() == 1 && id.getDataAttributeId() == dataAttribute2.getDataAttributeId()) {
         assertEquals(logData1_2.getValue(), d.getValue());
-      } else if (id.getRowNo() == 2 && id.getLogHeaderId() == logHeader1.getLogHeaderId()) {
+      } else if (id.getRowNo() == 2 && id.getDataAttributeId() == dataAttribute1.getDataAttributeId()) {
         assertEquals(logData2_1.getValue(), d.getValue());
-      } else if (id.getRowNo() == 2 && id.getLogHeaderId() == logHeader2.getLogHeaderId()) {
+      } else if (id.getRowNo() == 2 && id.getDataAttributeId() == dataAttribute2.getDataAttributeId()) {
         assertEquals(logData2_2.getValue(), d.getValue());
       }
     }

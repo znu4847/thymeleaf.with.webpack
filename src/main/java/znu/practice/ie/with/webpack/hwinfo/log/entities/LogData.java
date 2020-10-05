@@ -21,10 +21,10 @@ public class LogData {
   @JoinColumn(name = "log_info_id")
   private LogInfo logInfo;
 
-  @OneToOne
-  @MapsId("logHeaderId")
-  @JoinColumn(name = "log_header_id")
-  private LogHeader logHeader;
+  @ManyToOne
+  @MapsId("dataAttributeId")
+  @JoinColumn(name = "data_attribute_id")
+  private DataAttribute dataAttribute;
 
   private String value;
 

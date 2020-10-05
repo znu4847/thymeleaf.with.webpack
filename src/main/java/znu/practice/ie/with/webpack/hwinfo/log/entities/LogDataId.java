@@ -18,8 +18,8 @@ public class LogDataId implements Serializable {
   @Column(name = "log_info_id")
   private Long logInfoId;
 
-  @Column(name = "log_header_id")
-  private Long logHeaderId;
+  @Column(name = "data_attribute_id")
+  private Long dataAttributeId;
 
   @Column(name = "row_no")
   private Integer rowNo;
